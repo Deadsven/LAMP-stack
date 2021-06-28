@@ -1,0 +1,55 @@
+version: "3.3"
+
+services:
+  reverse:
+    container_name: reverse
+    hostname: reverse
+    image: nginx
+    ports:
+      - 81:80
+  nginx:
+    depends_on:
+      - reverse
+    image: nginx:alpine
+    restart: always
+  www:
+    depends_on:
+    - db
+    - reverse
+    image: php:7.4.18-apache
+    volumes:
+    - ./test:/var/www/html
+    ports:
+    - 80:80
+  db:
+    image: mysql:5.7
+    container_name: db
+    env_file: db.env
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma
+    links:
+      - db
+    env_file: pma.env
+    restart: always
+    ports:
+      - 8080:8000
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    ports:
+      - '8000:80'
+    restart: always
+    volumes: ['.wordpress/:/var/www/html']
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: db_user
+      WORDPRESS_DB_PASSWORD: db_user_pass
+      WORDPRESS_DB_NAME: app_db
+volumes:
+  dbdata:
